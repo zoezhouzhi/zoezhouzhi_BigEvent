@@ -10,9 +10,14 @@
     <link rel="stylesheet" href="css/reset.css">
     <link rel="stylesheet" href="css/iconfont.css">
     <link rel="stylesheet" href="css/main.css">
+    <!-- 导入日期控件css文件 -->
     <link type="text/css" rel="stylesheet" href="js/jedate/css/jedate.css">
     <script src="js/jquery-1.12.4.min.js"></script>
+    <script src="./js/template-web.js"></script>
+    <!-- 导入日期控件js文件 -->
     <script src="js/jedate/js/jedate.js"></script>
+    <script src="./js/moment.js"></script>
+    <!-- 导入富文本编辑器js文件 -->
     <script src="js/tinymce/js/tinymce/tinymce.min.js"></script>
     <script src="js/tinymce/js/tinymce_setup.js"></script>
 </head>
@@ -27,19 +32,20 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章标题：</label>
                     <div class="col-sm-10">
-                        <input type="email" class="form-control" id="inputEmail3" placeholder="文章标题">
+                        <input type="text" name="title" class="form-control" id="inputEmail3" placeholder="文章标题">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">文章封面：</label>
                     <div class="col-sm-10">
-                        <input type="file" id="exampleInputFile">
+                        <img src="./images/舔狗.jfif" style="height:100px" alt="" id="imgIcon">
+                        <input type="file" name="cover" id="exampleInputFile">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control">
+                        <select name="type" class="form-control article_cate">
                             <option>1</option>
                             <option>2</option>
                             <option>3</option>
@@ -53,7 +59,7 @@
                     <div class="col-sm-4">
 
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="YYYY-MM-DD" id="dateinput">
+                            <input type="text" name="date" class="form-control" placeholder="YYYY-MM-DD" id="dateinput">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button"
                                     onclick="jeDate('#dateinput',{trigger:false,format: 'YYYY-MM-DD'})"><i
@@ -65,14 +71,14 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
-                        <textarea class="form-control" id="rich_content" name="content" placeholder="文章内容">
+                        <textarea class="form-control" id="rich_content" placeholder="文章内容">
                             Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda fugiat illo nihil molestias ab. Laborum eius non atque, totam sapiente quae obcaecati assumenda ratione inventore pariatur maiores, qui libero delectus.
                             </textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">发布</button>
+                        <button type="submit" class="btn btn-success btn-release">发布</button>
                         <button type="submit" class="btn btn-default">存为草稿</button>
                     </div>
                 </div>
@@ -80,6 +86,62 @@
         </div>
     </div>
 
+    <!-- 准备模板 -->
+    <script id="tmp_cate" type="text/html">
+        {{each data v}}
+            <option value="{{v.id}}">{{v.name}}</option>
+        {{/each}}
+    </script>
+
+    <script>
+        $(function(){
+            //1.图片预览
+            $('#exampleInputFile').on('change',function(){
+                var url=URL.createObjectURL(this.files[0]);
+                $('#imgIcon').attr('src',url);
+            });
+
+            //2.获取所有的文章类别
+            $.get({
+                url:'http://localhost:8000/admin/category_search',
+                success:function(res){
+                    console.log(res);
+                    if(res.code==200){
+                        var resHtml=template('tmp_cate',res);
+                        $('.article_cate').html(resHtml);
+                    }
+                }
+            });
+
+            //3.一打开发表文章页面就获取当前时间
+            var currentDate=moment().format('YYYY-MM-DD');
+            // console.log(currentDate);
+            $('#dateinput').val(currentDate);
+
+            //4.发布按钮的点击事件
+            $('.btn-release').on('click',function(){
+                //4.1创建formDate对象
+                var fm=new FormData($('form')[0]);
+                fm.append('state','草稿');
+                fm.append('content',tinyMCE.activeEditor.getContent());
+                //4.2发请求
+                $.post({
+                    url:'http://localhost:8000/admin/article_publish',
+                    data:fm,
+                    contentType:false,
+                    processData:false,
+                    success:function(res){
+                        console.log(res);
+                        if(res.code==201){
+                            alert('发布成功!!!');
+                        }
+                    }
+                });
+                
+            });
+
+        });
+    </script>
 </body>
 
 </html>
