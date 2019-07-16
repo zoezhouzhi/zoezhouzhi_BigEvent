@@ -72,7 +72,8 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success btnAddCate" data-toggle="modal"
+                                data-target="#addModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -80,57 +81,190 @@
         </div>
     </div>
 
-    <div class="modal fade" id="addModal" >
+    <!-- Modal -->
+    <div class="modal fade" id="addModal">
         <div class="modal-dialog" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
-              <h4 class="modal-title">新增分类</h4>
-            </div>
-            <div class="modal-body">
-              <form>
-                <div class="form-group">
-                  <label for="recipient-name" class="control-label">分类名称:</label>
-                  <input type="text" class="form-control" id="recipient-name">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"></button>
+                    <h4 class="modal-title">新增分类</h4>
                 </div>
-                <div class="form-group">
-                  <label for="message-text" class="control-label">分类别名:</label>
-                  <input type="text" class="form-control" id="recipient-name">
+                <div class="modal-body">
+                    <form>
+                        <!-- 这是用来保存id的标签 -->
+                        <!-- 隐藏域:默认就有隐藏效果 -->
+                        <input type="hidden" name="id" class="id">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">分类名称:</label>
+                            <input type="text" name="name" class="form-control name" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">分类别名:</label>
+                            <input type="text" name="slug" class="form-control slug" id="recipient-slug">
+                        </div>
+                    </form>
                 </div>
-              </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" id="model_shutoff">关闭</button>
+                    <button type="button" class="btn btn-primary" id="model_add">新增</button>
+                </div>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-default" id="model_shutoff">关闭</button>
-              <button type="button" class="btn btn-primary" id="model_add">新增</button>
-            </div>
-          </div>
         </div>
-      </div>
+    </div>
 
-      <script>
-          $('#addModal').modal({
-            show:false,
-            backdrop:false
-          });
+    <script>
+        $('#addModal').modal({
+            show: false,
+            backdrop: false
+        });
 
-          $('#model_shutoff').click(function(){
+        $('#model_shutoff').click(function () {
             alert('shutoff');
             $('#addModal').modal('hide');
-          });
+        });
+      
+    </script>
 
-          $('#model_add').click(function(){
-            alert('add');
-            $('#addModal').modal('hide');
-          });
+    <!-- 导入模板引擎js文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 准备一个模板 -->
+    <script id="tmp_cate" type="text/html">
+        {{each data}}
+        <tr>
+            <td>{{$value.name}}</td>
+            <td>{{$value.slug}}</td>
+            <td class="text-center">
+                <a href="#" data-id="{{$value.id}}" class="btn btn-info btn-xs btn-edit">编辑</a>
+                <a href="#" data-id="{{$value.id}}" class="btn btn-danger btn-xs btn-delete">删除</a>
+            </td>
+        </tr>
+        {{/each}}
+    </script>
 
-          $('.category_table').delegate('a','click',function(){
-              if($(this).hasClass('btn-info')){
-                $('#addModal .modal-title').html('修改分类名称');
+    <script>
+        $(function () {
+            //1.把发请求获取所有文章类别信息,渲染到页面的代码封装成函数
+            function getData() {
+                $.get({//文章类别搜索
+                    url: 'http://localhost:8000/admin/category_search',
+                    success: function (res) {
+                        // console.log(res);
+
+                        if (res.code == 200) {
+                            //1.1调用模板
+                            var resHtml = template('tmp_cate', res);
+                            //1.2把这个字符串交给tbody的html属性.
+                            $('tbody').html(resHtml);
+                        }
+                    }
+                });
+            }
+            //1.2需求:一进来就发请求,显示所有的文章类别.
+            getData();
+
+
+            //2.需求: 删除文章分类
+            //2.1 删除的点击事件(事件委托)
+            $('tbody').on('click', '.btn-delete', function (e) {
+                e.preventDefault(); //阻止默认跳转
+                if (confirm('你确定要删除吗?')) {
+                    var that = $(this); //把当前点击的这个删除按钮,用that保存一下.
+                    // console.log(this);
+                    //2.2获取当前删除的这一个文章类型的id
+                    var cateId = $(this).attr('data-id');
+                    //console.log(cateId);
+                    //2.3发请求(删除文章类别)
+                    $.post({
+                        url: 'http://localhost:8000/admin/category_delete',
+                        data: { id: cateId },
+                        success: function (res) {
+                            console.log(res);
+
+                            if (res.code == 200) {
+                                //2.4删除这一行
+                                that.parents('tr').remove();
+                                // getData();
+                            }
+                        }
+                    });
+                }
+            });
+
+
+            //3.需求:点击 新增分类 按钮,模态框里的 title和新增 还原
+            $('.btnAddCate').on('click', function () {
+                $('#addModal .modal-title').html('新增分类');
+                $('#model_add').text('新增').removeClass('btn-success');
+            });
+
+            //4.需求:编辑文章类别(委托事件)
+            //4.1编辑 按钮的点击事件
+            $('tbody').on('click', '.btn-edit', function () {
                 $('#addModal').modal('show');
-              }
-          })      
-      </script>
+                //4.2修改模态框的title和修改按钮的内容
+                $('#addModal .modal-title').html('修改分类');
+                $('#model_add').text('修改').addClass('btn-success');
+                //4.3获取要编辑的id,name,slug
+                var id = $(this).attr('data-id');
+                var name = $(this).parent().prev().prev().text();
+                var slug = $(this).parent().prev().text();
+                //4.4把他们显示在模态框里对应的标签上
+                $('.modal-body .id').val(id);
+                $('.modal-body .name').val(name);
+                $('.modal-body .slug').val(slug);
 
+            });
+
+            //5.模态框里的 新增或编辑 按钮的点击事件
+            //5.1模态框里的 新增按钮 的点击事件
+            $('#model_add').on('click', function () {
+                //5.2判断按钮是否拥有 类 btn-success
+                if ($(this).hasClass('btn-success')) {//编辑
+                    //serialize和formData使用方法一样,要给form表单里获取值的标签添加 name 属性-----------------------------
+                    var data = $('.modal-body form').serialize();
+                    //获取的是字符串如:id=10&name=666&slug=666
+                    // console.log(data);
+
+                    //5.3发请求(编辑文章类别)
+                    $.post({
+                        url: 'http://localhost:8000/admin/category_edit',
+                        data: data,
+                        success: function (res) {
+                            // console.log(res);
+                            if (res.code == 200) {
+                                alert('修改成功!!!');
+                                getData();
+                            }
+                        }
+                    });
+
+                } else {
+                    //5.4获取新增分类的模态框里输入的内容
+                    var cateName = $('#recipient-name').val().trim();
+                    var cateSlug = $('#recipient-slug').val().trim();
+                    //5.5发请求(新增文章类别)
+                    $.post({
+                        url: 'http://localhost:8000/admin/category_add ',
+                        data: { name: cateName, slug: cateSlug },
+                        success: function (res) {
+                            // console.log(res);
+                            if (res.code == 200) {
+                                //方法一:刷新页面
+                                // location.reload();
+                                //方法二:重新发请求显示一次
+                                getData();
+
+                            }
+                        }
+                    });
+                }
+                //隐藏模态框
+                $('#addModal').modal('hide');
+            });
+
+
+        });
+    </script>
 </body>
 
 </html>
