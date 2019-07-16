@@ -321,6 +321,28 @@
                 }
             });
 
+            //pagination插件的使用方法
+            //声明一个变量,用来记录获取的总页数
+            var myTotalPage = 15;
+            //需求:分页
+            var $pagination = $('.pagination');
+            var defaultOpts = {
+                totalPages: myTotalPage,//最大页签数
+                visiblePages: 6,//可见页签数
+                first: '首页',
+                last: '尾页',
+                prev: "上一页",
+                next: "下一页",
+                onPageClick: function (event, page) {
+                    // $('.pagination').text('Page ' + page);
+                    // console.log(page);//点击的页码
+                    // console.log(event);//点击时触发的事件对象
+                    getData(page);
+                }
+            };
+            $pagination.twbsPagination(defaultOpts);
+
+
             //2.发请求,查询对应页数的所有文章类别,显示在页面上
             function getData(myPage) {
                 //2.1获取文章类别和文章状态
@@ -341,7 +363,21 @@
                             //2.3调用模板
                             var resHtml = template('art_list', res);
                             $('tbody').html(resHtml);
+                            //2.4因为总页数在发请求成功后返回的 数据中 
+                            //所以 重绘页码条 的代码写在success方法中
+                            var totalPages = res.totalPage;//获取新的总页数
+                            //判断
+                            if (myTotalPage != totalPages) {//如果现在获取的新页码数不等于当前总页码数,就重绘
+                                myTotalPage = totalPages;//把获取的新页码数,赋值给声明的变量(代表总页码数)
 
+                                var currentPage = $pagination.twbsPagination('getCurrentPage');//获取当前页
+
+                                $pagination.twbsPagination('destroy');//获取当前页
+                                $pagination.twbsPagination($.extend({}, defaultOpts, {
+                                    startPage: 1,//以当前页为开始页
+                                    totalPages: totalPages
+                                }));
+                            }
                         }
                     }
                 });
@@ -357,7 +393,13 @@
             //4.页面一打开就显示所有的文章
             $('#btnSearch').trigger('click');
 
-            //5.分页插件的使用
+
+
+
+
+
+
+            /* //5.分页插件的使用
             $('.pagination').twbsPagination({
                 totalPages: 15,//最大页签数
                 visiblePages: 6,//可见页签数
@@ -371,7 +413,7 @@
                     // console.log(event);//点击时触发的事件对象
                     getData(page);
                 }
-            });
+            }); */
 
 
         });
