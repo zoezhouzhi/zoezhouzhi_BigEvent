@@ -27,25 +27,27 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章标题：</label>
                     <div class="col-sm-10">
-                        <input type="email" class="form-control" id="inputEmail3" value="文章标题文字">
+                        <input type="email" name="title" class="form-control title" id="inputEmail3" value="文章标题文字">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">文章封面：</label>
                     <div class="col-sm-10">
                         <img src="images/pic06.jpg" class="article_cover">
-                        <input type="file" id="exampleInputFile">
+                        <input type="file" name="cover" id="exampleInputFile">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control article_type">
-                            <option>类别一</option>
+                        <select name="type" class="form-control article_type">
+                            <option>科学</option>
+                            <option>军事</option>
+                            <!-- <option>类别一</option>
                             <option>类别二</option>
                             <option>类别三</option>
                             <option selected>类别四</option>
-                            <option>类别五</option>
+                            <option>类别五</option> -->
                         </select>
                     </div>
                 </div>
@@ -54,24 +56,25 @@
                     <div class="col-sm-4">
 
                         <div class="input-group">
-                            <input type="text" class="form-control" value="2019-05-17" id="dateinput">
-                            <span class="input-group-btn">
+                            <input type="text" class="form-control" value="2019-05-17" id="dateinput" name="date" disabled>
+                            <!-- <span class="input-group-btn">
                                 <button class="btn btn-default" type="button"
                                     onclick="jeDate('#dateinput',{trigger:false,format: 'YYYY-MM-DD'})"><i
                                         class="iconfont icon-icondate"></i></button>
-                            </span>
+                            </span> -->
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" id="rich_content" name="content" placeholder="文章内容" value="文章内容">
+                        <input type="text" class="form-control" id="rich_content" placeholder="文章内容"
+                            value="文章内容">
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">修改</button>
+                        <button type="submit" class="btn btn-success btn-edit">修改</button>
                     </div>
                 </div>
             </form>
@@ -89,24 +92,71 @@
 
 
     <script>
-        $(function(){
+        $(function () {
             //1.一打开页面就获取所有的文章类别,渲染到下拉菜单中
             $.get({
-                url:'http://localhost:8000/admin/category_search',
-                success:function(res){
+                url: 'http://localhost:8000/admin/category_search',
+                success: function (res) {
                     // console.log(res);
-                    if(res.code==200){
+                    if (res.code == 200) {
                         //调用模板
-                        var resHtml=template('art_cate',res);
+                        var resHtml = template('art_cate', res);
                         $('.article_type').html(resHtml);
                     }
                 }
             });
 
+            //图片预览
+            $('#exampleInputFile').on('change', function () {
+                var url = URL.createObjectURL(this.files[0]);
+                $('.article_cover').attr('src', url);
+
+            })
+            //2.获取从点击 编辑按钮 传递过来的文章id
+            var id = window.location.search.split('=')[1];
+            // console.log(id);
+            //2.1发请求(文章搜索) 获取当前id的文章信息 展示在对应的标签上
+            $.get({
+                url: 'http://localhost:8000/admin/search',
+                data: { id: id },
+                success: function (res) {
+                    console.log(res);
+                    if (res.code == 200) {
+                        $('.article_form .title').val(res.data.title);//文章标题
+                        $('.article_cover').attr('src', res.data.cover);//文章封面
+                        $('.article_type').val(res.data.type);//文章类别
+                        $('#dateinput').val(res.data.date);//文章发布时间
+                        $('#rich_content').val(res.data.content);//文章内容
+                    }
+                }
+            });
+
+            //3.需求:获取用户修改后的数据 发请求 进行修改
+            //3.1 修改按钮 的点击事件
+            $('.btn-edit').on('click',function(e){
+                e.preventDefault();
+                //3.2创建formDate对象
+                var fm=new FormData($('form')[0]);
+                // console.log(fm);
+                //追加id和富文本中修改后的内容
+                fm.append('id',id);
+                fm.append('content',tinyMCE.activeEditor.getContent());
+                //3.3发请求(文章编辑)
+                $.post({
+                    url:'http://localhost:8000/admin/article_edit',
+                    data:fm,
+                    contentType:false,
+                    processData:false,
+                    success:function(res){
+                        console.log(res);
+                        if(res.code==200){
+                            alert('修改成功!!!');
+                        }
+                    }
+                });
+            });
 
 
-
-            
         });
     </script>
 </body>
