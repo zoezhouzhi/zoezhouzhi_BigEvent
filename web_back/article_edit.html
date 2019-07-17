@@ -40,7 +40,7 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control">
+                        <select class="form-control article_type">
                             <option>类别一</option>
                             <option>类别二</option>
                             <option>类别三</option>
@@ -78,6 +78,37 @@
         </div>
     </div>
 
+    <!-- 导入模板引擎js文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 准备模板 -->
+    <script id="art_cate" type="text/html">
+        {{each data}}
+        <option value="{{$value.id}}">{{$value.name}}</option>
+        {{/each}}
+    </script>
+
+
+    <script>
+        $(function(){
+            //1.一打开页面就获取所有的文章类别,渲染到下拉菜单中
+            $.get({
+                url:'http://localhost:8000/admin/category_search',
+                success:function(res){
+                    // console.log(res);
+                    if(res.code==200){
+                        //调用模板
+                        var resHtml=template('art_cate',res);
+                        $('.article_type').html(resHtml);
+                    }
+                }
+            });
+
+
+
+
+            
+        });
+    </script>
 </body>
 
 </html>
