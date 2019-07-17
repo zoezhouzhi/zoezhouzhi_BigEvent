@@ -290,8 +290,8 @@
                 <td class="text-center">{{v.date}}</td>
                 <td class="text-center">{{v.state}}</td>
                 <td class="text-center">
-                    <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
-                    <a href="#" data-id="{{v.id}}" class="btn btn-danger btn-xs">删除</a>
+                    <a href="article_edit.html?{{v.id}}" class="btn btn-default btn-xs">编辑</a>
+                    <a href="#" data-id="{{v.id}}" class="btn btn-danger btn-xs btn-delete">删除</a>
                 </td>
             </tr>
         {{/each}}
@@ -321,10 +321,10 @@
                 }
             });
 
-            //pagination插件的使用方法
+            //5.pagination插件的使用方法
             //声明一个变量,用来记录获取的总页数
             var myTotalPage = 15;
-            //需求:分页
+            //需求:分页(github上pagination插件)
             var $pagination = $('.pagination');
             var defaultOpts = {
                 totalPages: myTotalPage,//最大页签数
@@ -341,7 +341,6 @@
                 }
             };
             $pagination.twbsPagination(defaultOpts);
-
 
             //2.发请求,查询对应页数的所有文章类别,显示在页面上
             function getData(myPage) {
@@ -366,11 +365,13 @@
                             //2.4因为总页数在发请求成功后返回的 数据中 
                             //所以 重绘页码条 的代码写在success方法中
                             var totalPages = res.totalPage;//获取新的总页数
+                            //获取当前页,把当前页给暴露出去
+                            window.currentPage = $pagination.twbsPagination('getCurrentPage');//获取当前页
                             //判断
                             if (myTotalPage != totalPages) {//如果现在获取的新页码数不等于当前总页码数,就重绘
                                 myTotalPage = totalPages;//把获取的新页码数,赋值给声明的变量(代表总页码数)
 
-                                var currentPage = $pagination.twbsPagination('getCurrentPage');//获取当前页
+                                // var currentPage = $pagination.twbsPagination('getCurrentPage');//获取当前页
 
                                 $pagination.twbsPagination('destroy');//获取当前页
                                 $pagination.twbsPagination($.extend({}, defaultOpts, {
@@ -386,18 +387,14 @@
             //3.点击筛选按钮选出所有符合条件的文章
             $('#btnSearch').on('click', function (e) {
                 e.preventDefault();
+                //点击 筛选 按钮触发 首页 按钮的点击事件
+                $('.page-link').trigger('click');
                 //3.1调用函数
                 getData(1);
             });
 
             //4.页面一打开就显示所有的文章
-            $('#btnSearch').trigger('click');
-
-
-
-
-
-
+            // $('#btnSearch').trigger('click');
 
             /* //5.分页插件的使用
             $('.pagination').twbsPagination({
@@ -414,6 +411,34 @@
                     getData(page);
                 }
             }); */
+
+            //6.需求删除文章
+            //6.1删除的点击事件
+            $('tbody').on('click','.btn-delete',function(){
+
+                //6.2保存当前删除的这个按扭
+                // var that=this;
+                //6.3confirm提示一下
+                if(confirm('请问你确定要删除吗?')){
+                    //6.4获取要删除的文章的id
+                    var id=$(this).attr('data-id');
+         
+                    //6.5发请求(删除文章)
+                    $.get({
+                        url:'http://localhost:8000/admin/article_delete',
+                        data:{id:id},
+                        success:function(res){
+                          
+                            if(res.code==200){
+                                //6.6获取当前页,把当前页传进去,刷新当前页
+                                getData(currentPage);
+                                //操作dom树,直接删除当前这一行
+                                //that.parents('tr').remove();//如果这样的话会一页少一个数据
+                            }
+                        }
+                    });
+                }
+            });
 
 
         });
