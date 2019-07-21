@@ -205,6 +205,40 @@
         <p>电话：0755-****888 粤ICP备*******8号</p>
     </div>
 
+
+    <script src="./js/jquery-1.12.4.min.js"></script>
+    <script src="./js/template-web.js"></script>
+    <script id="tpl" type="text/html">
+        {{author}} 发布于 {{date}}&nbsp;&nbsp;&nbsp;分类: {{type}}&nbsp;&nbsp;&nbsp;阅读:
+                ({{read}})&nbsp;&nbsp;&nbsp;评论: ({{comment}})
+    </script>
+
+    <script>
+        $(function () {
+            //1.获取前台页面点击焦点新闻传递过来的id
+            var id = window.location.search.split('=')[1];
+            console.log(id);
+            
+            //2.发请求(文章搜索)
+            $.get({
+                url: 'http://localhost:8000/admin/search',
+                data: { id: id },
+                success: function (res) {
+                    console.log(res);
+                    if (res.code == 200) {
+                        //文章标题
+                        $('.article_title').text(res.data.title);
+                        //文章内容
+                        $('.article_con').html(res.data.content);
+                        // 调用模板
+                        var resHtml = template('tpl', res.data);
+                        $('.article_info').html(resHtml);
+                    }
+                }
+            });
+
+        });
+    </script>
 </body>
 
 </html>
