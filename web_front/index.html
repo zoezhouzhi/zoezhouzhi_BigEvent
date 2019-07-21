@@ -238,16 +238,18 @@
     <script>
         $(function () {
             //1.一进入页面就显示最新的5篇焦点新闻
-            $.get({
+            $.get({//发请求(文章搜索)
                 url: 'http://localhost:8000/admin/search',
                 data: {
                     page: 1,
                     perpage: 5
                 },
-                success:function(res){
+                success: function (res) {
                     // console.log(res);
-                    var resHtml=template('tpl',res);
-                    $('.focus_list').html(resHtml);
+                    if (res.code == 200) {
+                        var resHtml = template('tpl', res);
+                        $('.focus_list').html(resHtml);
+                    }
                 }
             });
 
